@@ -41,8 +41,8 @@ def loadData(filename):
     imputer = KNNImputer(n_neighbors=5)
     data_imputed = pd.DataFrame(imputer.fit_transform(data), columns=data.columns)
 
-    # Determine the size for training data (70% of the total dataset)
-    trainDataSize = int(0.7 * data_imputed.shape[0])
+    # Determine the size for training data (80% of the total dataset)
+    trainDataSize = int(0.8 * data_imputed.shape[0])
 
     # Split the imputed data into training and testing sets
     trainData = data_imputed.iloc[:trainDataSize, :]
