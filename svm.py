@@ -3,6 +3,22 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.impute import KNNImputer
+from sklearn.preprocessing import StandardScaler
+
+
+
+''''
+Reason for hadling missing datat using knn imputer:
+
+K-Nearest Neighbors (KNN) Imputation. This method is particularly suitable because:
+
+Data Nature: The dataset is numerical, and KNN works well with such data by finding the 'k' closest samples and imputing missing values based on similarity measures (like Euclidean distance).
+
+Biomedical Relevance: In biomedical datasets, missing values may have patterns that are similar among certain samples. KNN can leverage these patterns effectively.
+
+Flexibility: KNN Imputation is adaptable and can provide more nuanced imputation than simple mean or median replacement.
+
+'''
 
 def loadData(filename):
 
@@ -15,21 +31,27 @@ def loadData(filename):
     data_imputed = pd.DataFrame(imputer.fit_transform(data), columns=data.columns)
 
     # Using 70% of the data for training
-    trainDataSize = int(0.7 * data.shape[0])
-    trainData = data.iloc[:trainDataSize, :]
+    trainDataSize = int(0.7 * data_imputed.shape[0])
+    trainData = data_imputed.iloc[:trainDataSize, :]
     X_train = trainData.iloc[:, 1:-1].values # Ignoring the first column (id)
     y_train = trainData.iloc[:, -1].values
 
     # Using 30% of the data for testing
-    testData = data.iloc[trainDataSize:, :]
+    testData = data_imputed.iloc[trainDataSize:, :]
     X_test = testData.iloc[:, 1:-1].values # Ignoring the first column (id)
     y_test = testData.iloc[:, -1].values
 
     # Standardizing Y labels
     y_train = (np.where(y_train == 2, -1, 1)).reshape(-1, 1)
-    y_test = np.where(y_test == 2, -1, 1)
+    y_test = np.where(y_test == 2, -1, 1).reshape(-1, 1)
 
-    
+    # Initialize the scaler
+    scaler = StandardScaler()
+
+    # Normalizing the data
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+
     return X_train, y_train, X_test, y_test
 
 def svmTrain(X_train, y_train, gamma):
@@ -49,7 +71,7 @@ def svmTrain(X_train, y_train, gamma):
     problem = cp.Problem(objective, constraints)
 
     # Solving the problem
-    problem.solve(verbose=True)
+    problem.solve()
 
     return a.value, b.value
 
@@ -65,10 +87,13 @@ def svmTest(a, b, X_test, y_test):
 
 def plotData(train_errors, test_errors, gamma):
 
+    train_errors = np.array(train_errors) * 100
+    test_errors = np.array(test_errors) * 100
+
     plt.plot(gamma, train_errors, label='Train Error')
     plt.plot(gamma, test_errors, label='Test Error')
     plt.xlabel('Gamma')
-    plt.ylabel('Error')
+    plt.ylabel('Error (%)')
     plt.legend()
     plt.show()
 
