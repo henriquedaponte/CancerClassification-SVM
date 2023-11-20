@@ -27,18 +27,15 @@ def loadData(filename):
     
     return X_train, y_train, X_test, y_test
 
-def svmTrain(filename, gama):
-
-    # Loading the data
-    X_train, y_train, X_test, y_test = loadData(filename)
+def svmTrain(X_train, y_train, gamma):
 
     # Defining the decsion variables
-    a = cp.Variable((X_train.shape[0], 1))
+    a = cp.Variable((X_train.shape[1], 1))
     b = cp.Variable()
     eta = cp.Variable((X_train.shape[0], 1))
 
     # Defining the objective function
-    objective = cp.Minimize(cp.norm2(a) + gama * cp.norm1(eta))
+    objective = cp.Minimize(cp.norm2(a) + gamma * cp.norm1(eta))
 
     # Defining the constraints
     constraints = [cp.multiply(y_train, (a.T @ X_train - b)) >= 1 - eta, eta >= 0]
@@ -51,29 +48,49 @@ def svmTrain(filename, gama):
 
     return a.value, b.value
 
-def svmTest(filename, gamma):
-
-    # Loading the data
-    X_train, y_train, X_test, y_test = loadData(filename)
-    a, b = svmTrain(filename, gamma)
+def svmTest(a, b, X_test, y_test):
 
     # Calculating the predicted values
     y_pred = np.sign(np.dot(X_test, a) - b)
 
     # Calculating 0-1 loss
-    accuracy = np.sum(y_pred == y_test) / y_test.shape[0]
+    loss = 1 - np.sum(y_pred == y_test) / y_test.shape[0]
 
-    return accuracy
+    return loss
 
+def plotData(train_errors, test_errors, gamma):
+
+    plt.plot(gamma, train_errors, label='Train Error')
+    plt.plot(gamma, test_errors, label='Test Error')
+    plt.xlabel('Gamma')
+    plt.ylabel('Error')
+    plt.legend()
+    plt.show()
+
+ 
+
+
+def deployModel(filename):
+   
+    gamma = [0.01, 0.1, 0.5, 1, 5, 10, 50]
+
+    X_train, y_train, X_test, y_test = loadData(filename)
+
+    train_errors = []
+    test_errors = []
+
+    for gama in gamma:
+        a, b = svmTrain(X_train, y_train, gama)
+        train_error = svmTest(a, b, X_train, y_train)
+        test_error = svmTest(a, b, X_test, y_test)
+
+        train_errors.append(train_error)
+        test_errors.append(test_error)
+         
+
+    plotData(train_errors, test_errors, gamma)
 
 if __name__ == '__main__':
+    deployModel('breast-cancer-wisconsin.data')
 
-
-    # Training the model
-    for gama in gamma:
-        a, b = svmTrain('breast-cancer-winsconsin.data', gama)
-
-        # Testing the model
-        accuracy = svmTest(a, b, X_test, y_test)
-
-        print('Accuracy for gama = {} is {}'.format(gama, accuracy))
+     
