@@ -21,6 +21,18 @@ Flexibility: KNN Imputation is adaptable and can provide more nuanced imputation
 '''
 
 def loadData(filename):
+    """
+    Load and preprocess the dataset.
+
+    Parameters:
+    - filename (str): The path to the dataset file.
+
+    Returns:
+    - X_train (np.array): Features for the training data.
+    - y_train (np.array): Labels for the training data.
+    - X_test (np.array): Features for the test data.
+    - y_test (np.array): Labels for the test data.
+    """
 
     data = pd.read_csv(filename, delimiter=',', header=None, na_values='?')
 
@@ -55,6 +67,18 @@ def loadData(filename):
     return X_train, y_train, X_test, y_test
 
 def svmTrain(X_train, y_train, gamma):
+    """
+    Train an SVM classifier using cvxpy.
+
+    Parameters:
+    - X_train (np.array): Training features.
+    - y_train (np.array): Training labels.
+    - gamma (float): The regularization parameter.
+
+    Returns:
+    - a (cp.Variable): The learned weight vector.
+    - b (cp.Variable): The learned bias term.
+    """
 
     # Defining the decsion variables
     a = cp.Variable((X_train.shape[1], 1))
@@ -76,6 +100,18 @@ def svmTrain(X_train, y_train, gamma):
     return a.value, b.value
 
 def svmTest(a, b, X_test, y_test):
+    """
+    Test the SVM classifier and calculate the 0-1 loss.
+
+    Parameters:
+    - a (cp.Variable): The learned weight vector from svmTrain.
+    - b (cp.Variable): The learned bias term from svmTrain.
+    - X_test (np.array): Test features.
+    - y_test (np.array): Test labels.
+
+    Returns:
+    - loss (float): The calculated 0-1 loss.
+    """
 
     # Calculating the predicted values
     y_pred = np.sign(np.dot(X_test, a) - b)
@@ -86,6 +122,14 @@ def svmTest(a, b, X_test, y_test):
     return loss
 
 def plotData(train_errors, test_errors, gamma):
+    """
+    Plot the training and testing errors against values of gamma.
+
+    Parameters:
+    - train_errors (list): List of training errors for each gamma.
+    - test_errors (list): List of testing errors for each gamma.
+    - gamma (list): List of gamma values used in training.
+    """
 
     train_errors = np.array(train_errors) * 100
     test_errors = np.array(test_errors) * 100
@@ -97,10 +141,13 @@ def plotData(train_errors, test_errors, gamma):
     plt.legend()
     plt.show()
 
- 
-
-
 def deployModel(filename):
+    """
+    Main function to deploy the SVM model.
+
+    Parameters:
+    - filename (str): The path to the dataset file.
+    """
    
     gamma = [0.01, 0.1, 0.5, 1, 5, 10, 50]
 
