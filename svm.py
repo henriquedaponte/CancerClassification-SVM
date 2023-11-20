@@ -1,13 +1,18 @@
 import cvxpy as cp
 import numpy as np
 import pandas as pd
-import matplotlib as plt
-
-gamma = [0.01, 0.1, 0.5, 1, 5, 10, 50]
+import matplotlib.pyplot as plt
+from sklearn.impute import KNNImputer
 
 def loadData(filename):
 
-    data = pd.read_csv(filename, delimiter=',')
+    data = pd.read_csv(filename, delimiter=',', header=None, na_values='?')
+
+    # Initialize the KNNImputer
+    imputer = KNNImputer(n_neighbors=5)  
+
+    # Perform the imputation
+    data_imputed = pd.DataFrame(imputer.fit_transform(data), columns=data.columns)
 
     # Using 70% of the data for training
     trainDataSize = int(0.7 * data.shape[0])
@@ -21,7 +26,7 @@ def loadData(filename):
     y_test = testData.iloc[:, -1].values
 
     # Standardizing Y labels
-    y_train = np.where(y_train == 2, -1, 1)
+    y_train = (np.where(y_train == 2, -1, 1)).reshape(-1, 1)
     y_test = np.where(y_test == 2, -1, 1)
 
     
@@ -38,13 +43,13 @@ def svmTrain(X_train, y_train, gamma):
     objective = cp.Minimize(cp.norm2(a) + gamma * cp.norm1(eta))
 
     # Defining the constraints
-    constraints = [cp.multiply(y_train, (a.T @ X_train - b)) >= 1 - eta, eta >= 0]
+    constraints = [cp.multiply(y_train, (X_train @ a - b)) >= 1 - eta, eta >= 0]
 
     # Defining the problem
     problem = cp.Problem(objective, constraints)
 
     # Solving the problem
-    problem.solve()
+    problem.solve(verbose=True)
 
     return a.value, b.value
 
